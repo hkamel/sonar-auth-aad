@@ -20,6 +20,7 @@
 package org.almrangers.auth.aad;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
@@ -31,7 +32,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class JSONHelper {
-  private static Logger logger = Logger.getLogger(JSONHelper.class);
+  private static final String DELTA_LINK = "deltaLink=";
+  private static final String SKIPTOKEN = "$skiptoken=";
+  private static final String RESPONSE_MSG = "responseMsg";
+	private static Logger logger = Logger.getLogger(JSONHelper.class);
 
   JSONHelper() {
     // PropertyConfigurator.configure("log4j.properties");
@@ -46,10 +50,8 @@ public class JSONHelper {
    * @return An JSON Array that would contains all the collection object.
    * @throws Exception
    */
-  public static JSONArray fetchDirectoryObjectJSONArray(JSONObject jsonObject) throws Exception {
-    JSONArray jsonArray = new JSONArray();
-    jsonArray = jsonObject.optJSONObject("responseMsg").optJSONArray("value");
-    return jsonArray;
+  public static JSONArray fetchDirectoryObjectJSONArray(JSONObject jsonObject) {
+    return jsonObject.optJSONObject(RESPONSE_MSG).optJSONArray("value");
   }
 
   /**
@@ -60,10 +62,8 @@ public class JSONHelper {
    * @return An JSON Object that would contains the DirectoryObject.
    * @throws Exception
    */
-  public static JSONObject fetchDirectoryObjectJSONObject(JSONObject jsonObject) throws Exception {
-    JSONObject jObj = new JSONObject();
-    jObj = jsonObject.optJSONObject("responseMsg");
-    return jObj;
+  public static JSONObject fetchDirectoryObjectJSONObject(JSONObject jsonObject) {
+    return jsonObject.optJSONObject(RESPONSE_MSG);
   }
 
   /**
@@ -74,14 +74,14 @@ public class JSONHelper {
    * @return The skipToken.
    * @throws Exception
    */
-  public static String fetchNextSkiptoken(JSONObject jsonObject) throws Exception {
+  public static String fetchNextSkiptoken(JSONObject jsonObject) {
     String skipToken = "";
     // Parse the skip token out of the string.
-    skipToken = jsonObject.optJSONObject("responseMsg").optString("odata.nextLink");
+    skipToken = jsonObject.optJSONObject(RESPONSE_MSG).optString("odata.nextLink");
 
     if (!skipToken.equalsIgnoreCase("")) {
       // Remove the unnecessary prefix from the skip token.
-      int index = skipToken.indexOf("$skiptoken=") + (new String("$skiptoken=")).length();
+      int index = skipToken.indexOf(SKIPTOKEN) + SKIPTOKEN.length();
       skipToken = skipToken.substring(index);
     }
     return skipToken;
@@ -92,18 +92,18 @@ public class JSONHelper {
    * @return
    * @throws Exception
    */
-  public static String fetchDeltaLink(JSONObject jsonObject) throws Exception {
+  public static String fetchDeltaLink(JSONObject jsonObject) {
     String deltaLink = "";
     // Parse the skip token out of the string.
-    deltaLink = jsonObject.optJSONObject("responseMsg").optString("aad.deltaLink");
+    deltaLink = jsonObject.optJSONObject(RESPONSE_MSG).optString("aad.deltaLink");
     if (deltaLink == null || deltaLink.length() == 0) {
-      deltaLink = jsonObject.optJSONObject("responseMsg").optString("aad.nextLink");
+      deltaLink = jsonObject.optJSONObject(RESPONSE_MSG).optString("aad.nextLink");
       logger.info("deltaLink empty, nextLink ->" + deltaLink);
 
     }
     if (!deltaLink.equalsIgnoreCase("")) {
       // Remove the unnecessary prefix from the skip token.
-      int index = deltaLink.indexOf("deltaLink=") + (new String("deltaLink=")).length();
+      int index = deltaLink.indexOf(DELTA_LINK) + DELTA_LINK.length();
       deltaLink = deltaLink.substring(index);
     }
     return deltaLink;
@@ -119,7 +119,7 @@ public class JSONHelper {
    * @throws Exception
    *             If there is any error processing the request.
    */
-  public static String createJSONString(HttpServletRequest request, String controller) throws Exception {
+  public static String createJSONString(HttpServletRequest request, String controller) {
     JSONObject obj = new JSONObject();
     try {
       Field[] allFields = Class.forName(
@@ -150,12 +150,10 @@ public class JSONHelper {
           }
         }
       }
-    } catch (JSONException e) {
-      e.printStackTrace();
-    } catch (SecurityException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+    } catch (JSONException|SecurityException|ClassNotFoundException e) {
+    	if (logger.isDebugEnabled()) {
+      	logger.debug("Exception: " , e);
+  		}
     }
     return obj.toString();
   }
@@ -164,16 +162,18 @@ public class JSONHelper {
    *
    * @param key
    * @param value
-   * @return string format of this JSON obje
+   * @return string format of this JSON object
    * @throws Exception
    */
-  public static String createJSONString(String key, String value) throws Exception {
+  public static String createJSONString(String key, String value) {
 
     JSONObject obj = new JSONObject();
     try {
       obj.put(key, value);
     } catch (JSONException e) {
-      e.printStackTrace();
+    	if (logger.isDebugEnabled()) {
+      	logger.debug("Exception: " , e);
+  		}
     }
 
     return obj.toString();
@@ -187,10 +187,16 @@ public class JSONHelper {
    *            The jsonObject from where the attributes are to be copied.
    * @param destObject
    *            The object where the attributes should be copied into.
+   * @throws SecurityException 
+   * @throws NoSuchMethodException 
+   * @throws InvocationTargetException 
+   * @throws IllegalArgumentException 
+   * @throws IllegalAccessException 
    * @throws Exception
    *             Throws a Exception when the operation are unsuccessful.
    */
-  public static <T> void convertJSONObjectToDirectoryObject(JSONObject jsonObject, T destObject) throws Exception {
+  public static <T> void convertJSONObjectToDirectoryObject(JSONObject jsonObject, T destObject) 
+  		                   throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 
     // Get the list of all the field names.
     Field[] fieldList = destObject.getClass().getDeclaredFields();

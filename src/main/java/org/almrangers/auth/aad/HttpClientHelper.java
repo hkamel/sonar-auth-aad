@@ -32,7 +32,10 @@ import org.json.JSONObject;
 
 public class HttpClientHelper {
 
-  public HttpClientHelper() {
+  private static final String RESPONSE_MSG = "responseMsg";
+	private static final String RESPONSE_CODE = "responseCode";
+
+	public HttpClientHelper() {
     super();
   }
 
@@ -102,9 +105,9 @@ public class HttpClientHelper {
    * @return
    * @throws JSONException
    */
-  public static JSONObject processResponse(int responseCode, String errorCode, String errorMsg) throws JSONException {
+  public static JSONObject processResponse(int responseCode, String errorCode, String errorMsg) {
     JSONObject response = new JSONObject();
-    response.put("responseCode", responseCode);
+    response.put(RESPONSE_CODE, responseCode);
     response.put("errorCode", errorCode);
     response.put("errorMsg", errorMsg);
 
@@ -120,13 +123,13 @@ public class HttpClientHelper {
    * @return
    * @throws JSONException
    */
-  public static JSONObject processGoodRespStr(int responseCode, String goodRespStr) throws JSONException {
+  public static JSONObject processGoodRespStr(int responseCode, String goodRespStr) {
     JSONObject response = new JSONObject();
-    response.put("responseCode", responseCode);
+    response.put(RESPONSE_CODE, responseCode);
     if (goodRespStr.equalsIgnoreCase("")) {
-      response.put("responseMsg", "");
+      response.put(RESPONSE_MSG, "");
     } else {
-      response.put("responseMsg", new JSONObject(goodRespStr));
+      response.put(RESPONSE_MSG, new JSONObject(goodRespStr));
     }
 
     return response;
@@ -140,18 +143,18 @@ public class HttpClientHelper {
    * @return
    * @throws JSONException
    */
-  public static JSONObject processBadRespStr(int responseCode, String responseMsg) throws JSONException {
+  public static JSONObject processBadRespStr(int responseCode, String responseMsg) {
 
     JSONObject response = new JSONObject();
-    response.put("responseCode", responseCode);
+    response.put(RESPONSE_CODE, responseCode);
     if (responseMsg.equalsIgnoreCase("")) { // good response is empty string
-      response.put("responseMsg", "");
+      response.put(RESPONSE_MSG, "");
     } else { // bad response is json string
       JSONObject errorObject = new JSONObject(responseMsg).optJSONObject("odata.error");
 
       String errorCode = errorObject.optString("code");
       String errorMsg = errorObject.optJSONObject("message").optString("value");
-      response.put("responseCode", responseCode);
+      response.put(RESPONSE_CODE, responseCode);
       response.put("errorCode", errorCode);
       response.put("errorMsg", errorMsg);
     }

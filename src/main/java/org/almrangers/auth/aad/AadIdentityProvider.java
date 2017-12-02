@@ -93,13 +93,13 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
 
   @Override
   public boolean allowsUsersToSignUp() {
-    return settings.allowUsersToSignUp();
+    return settings.allowUsersToSignUp().orElse(Boolean.FALSE);
   }
 
   @Override
   public void init(InitContext context) {
     String state = context.generateCsrfState();
-    String authUrl = String.format(AUTH_REQUEST_FORMAT, settings.authorizationUrl(), settings.clientId(), context.getCallbackUrl(), state);
+    String authUrl = String.format(AUTH_REQUEST_FORMAT, settings.authorizationUrl(), settings.clientId().get(), context.getCallbackUrl(), state);
     context.redirectTo(authUrl);
   }
 
@@ -116,7 +116,7 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
       service = Executors.newFixedThreadPool(1);
       authContext = new AuthenticationContext(settings.authorityUrl(), false, service);
       URI url = new URI(context.getCallbackUrl());
-      ClientCredential clientCredt = new ClientCredential(settings.clientId(), settings.clientSecret());
+      ClientCredential clientCredt = new ClientCredential(settings.clientId().orElse(null), settings.clientSecret().orElse(null));
       Future<AuthenticationResult> future = authContext.acquireTokenByAuthorizationCode(
         oAuthVerifier, url, clientCredt, SECURE_RESOURCE_URL, null);
       result = future.get();
@@ -127,15 +127,15 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
         .setLogin(getLogin(aadUser))
         .setName(aadUser.getGivenName() + " " + aadUser.getFamilyName())
         .setEmail(aadUser.getDisplayableId());
-      if (settings.enableGroupSync()) {
+      if (settings.enableGroupSync().orElse(Boolean.FALSE)) {
         userGroups = getUserGroupsMembership(result.getAccessToken(), result.getUserInfo().getUniqueId());
-        if (userGroups != null)
+        if (!userGroups.isEmpty())
           userIdentityBuilder.setGroups(userGroups);
       }
       context.authenticate(userIdentityBuilder.build());
       context.redirectToRequestedPage();
     } catch (Exception e) {
-      LOGGER.error("Exception:" + e.toString());
+      LOGGER.error("Exception:" + e);
     } finally {
       if (service != null) {
         service.shutdown();
@@ -144,7 +144,7 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
   }
 
   private String getLogin(UserInfo aadUser) {
-    String loginStrategy = settings.loginStrategy();
+    String loginStrategy = settings.loginStrategy().orElse(null);
     if (LOGIN_STRATEGY_UNIQUE.equals(loginStrategy)) {
       return generateUniqueLogin(aadUser);
     } else if (LOGIN_STRATEGY_PROVIDER_ID.equals(loginStrategy)) {
