@@ -29,17 +29,19 @@ package org.almrangers.auth.aad;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.sonar.api.SonarPlugin;
+import org.sonar.api.Plugin;
 
-public class AuthAadPlugin extends SonarPlugin {
+public final class AuthAadPlugin implements Plugin {
 
   @Override
-  public List getExtensions() {
-    List extensions = new ArrayList();
-    extensions.add(AadIdentityProvider.class);
-    extensions.add(AadSettings.class);
-    extensions.addAll(AadSettings.definitions());
-    return extensions;
-  }
-
+	public void define(Context context) {
+		List<Object> extensions = new ArrayList<>();
+		// plug-in elements
+		extensions.add(AadIdentityProvider.class);
+		extensions.add(AadSettings.class);
+		// properties elements
+		extensions.addAll(AadSettings.authenticationProperties());
+		extensions.addAll(AadSettings.groupProperties());
+		context.addExtensions(extensions);
+	}
 }

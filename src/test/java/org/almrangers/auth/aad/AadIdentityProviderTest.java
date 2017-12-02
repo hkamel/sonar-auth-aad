@@ -29,7 +29,8 @@ package org.almrangers.auth.aad;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.sonar.api.config.Settings;
+import org.sonar.api.config.Configuration;
+import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.server.authentication.OAuth2IdentityProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,8 +42,8 @@ public class AadIdentityProviderTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
-  Settings settings = new Settings();
-  AadSettings aadSettings = new AadSettings(settings);
+  MapSettings settings = new MapSettings();
+  AadSettings aadSettings = new AadSettings(settings.asConfig());
   AadIdentityProvider underTest = new AadIdentityProvider(aadSettings);
 
   @Test
