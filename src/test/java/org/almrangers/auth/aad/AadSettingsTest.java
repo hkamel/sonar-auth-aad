@@ -112,8 +112,23 @@ public class AadSettingsTest {
   }
 
   @Test
+  public void enable_Group_Sync() {
+    settings.setProperty("sonar.auth.aad.enableGroupsSync", "true");
+    assertThat(underTest.enableGroupSync()).isTrue();
+
+    settings.setProperty("sonar.auth.aad.enableGroupsSync", "false");
+    assertThat(underTest.enableGroupSync()).isFalse();
+  }
+
+  @Test
+  public void restricted_GroupsString() {
+    settings.setProperty("sonar.auth.aad.restrictedGroups", "restrictedGroups");
+    assertThat(underTest.restrictedGroupsString()).isEqualTo("restrictedGroups");
+  }
+
+  @Test
   public void definitions() {
-    assertThat(AadSettings.definitions()).hasSize(8);
+    assertThat(AadSettings.definitions()).hasSize(9);
   }
 
 }

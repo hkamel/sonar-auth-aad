@@ -45,6 +45,7 @@ public class AadSettings {
   protected static final String ALLOW_USERS_TO_SIGN_UP = "sonar.auth.aad.allowUsersToSignUp";
   protected static final String TENANT_ID = "sonar.auth.aad.tenantId";
   protected static final String ENABLE_GROUPS_SYNC = "sonar.auth.aad.enableGroupsSync";
+  protected static final String RESTRICTED_GROUPS = "sonar.auth.aad.restrictedGroups";
   protected static final String LOGIN_STRATEGY = "sonar.auth.aad.loginStrategy";
   protected static final String LOGIN_STRATEGY_UNIQUE = "Unique";
   protected static final String LOGIN_STRATEGY_PROVIDER_ID = "Same as Azure AD login";
@@ -63,6 +64,9 @@ public class AadSettings {
 
   protected static final String AUTH_REQUEST_FORMAT = "%s?client_id=%s&response_type=code&redirect_uri=%s&state=%s";
   protected static final String GROUPS_REQUEST_FORMAT = "https://graph.windows.net/%s/users/%s/memberOf?api-version=1.6";
+
+  protected static final String CHECKGROUPS_REQUEST_FORMAT = "https://graph.windows.net/%s/users/%s/checkMemberGroups?api-version=1.6";
+  protected static final String CHECKGROUPS_REQUEST_PAYLOAD_FORMAT = "{\"groupIds\":[%s]}";
 
   private final Settings settings;
 
@@ -132,15 +136,24 @@ public class AadSettings {
         .options(LOGIN_STRATEGY_UNIQUE, LOGIN_STRATEGY_PROVIDER_ID)
         .index(7)
         .build(),
-      PropertyDefinition.builder(ENABLE_GROUPS_SYNC)
+        PropertyDefinition.builder(ENABLE_GROUPS_SYNC)
         .name("Enable Groups Synchronization")
-        .description("Enable groups synchronization from Azure AD to SonarQube, For each Azure AD group user belongs to, the user will be associated to a group with the same name(if it exists) in SonarQube.")
+        .description(format(
+          "Enable groups synchronization from Azure AD to SonarQube, For each Azure AD group for which user directly belongs to, the user will be associated to a group with the same name(if it exists) in SonarQube.",
+          LOGIN_STRATEGY_UNIQUE, LOGIN_STRATEGY_PROVIDER_ID))
         .category(CATEGORY)
         .subCategory(GROUPSYNCSUBCATEGORY)
         .type(BOOLEAN)
-        .defaultValue(valueOf(false))
-        .index(8)
-        .build()
+        .defaultValue(valueOf(true))
+        .build(),
+        PropertyDefinition.builder(RESTRICTED_GROUPS)
+          .name("Restricted Groups")
+          .description(
+            "Synchronize only restricted user groups of which the user has a <b>direct or transitive membership</b>. If this value is populated only groups mentioned will get sync and the user will be associated to a group with the same name(if it exists) in SonarQube.\\n ex: {\"GroupDisplayNameinAzureAD\":\"GroupObjectIdInAzureAD\",\"Group2DisplayNameinAzureAD\":\"Group2ObjectIdInAzureAD\"}  "
+            )
+          .category(CATEGORY)
+          .subCategory(GROUPSYNCSUBCATEGORY)
+          .build()
 
     );
   }
@@ -155,6 +168,10 @@ public class AadSettings {
 
   public boolean enableGroupSync() {
     return settings.getBoolean(ENABLE_GROUPS_SYNC);
+  }
+
+  public String restrictedGroupsString() {
+    return settings.getString(RESTRICTED_GROUPS);
   }
 
   public boolean multiTenant() {

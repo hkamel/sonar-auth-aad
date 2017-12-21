@@ -50,7 +50,7 @@ Proxy](http://docs.sonarqube.org/display/SONAR/Securing+the+Server+Behind+a+Prox
 
 	![Singin permission](./_img/permissions.png)
 
-1. If you enabled group synchronization, make sure the application has access to **Windows Azure Active Directory**. **Read all groups** delegated permissions should be selected.
+1. If you enabled group synchronization, make sure the application has access to **Windows Azure Active Directory**. **Read all groups & Read directory data** delegated permissions should be selected.
 
 	![groups permission](./_img/groups_sync.png)
 
@@ -133,6 +133,8 @@ Installation and configurations
 | Property Key                    | Property Name                 | Description                                                                                                                                                                             | Default value |
 |---------------------------------|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
 | sonar.auth.aad.enableGroupsSync | Enable Groups Synchronization | Enable groups syncronization from Azure AD to SonarQube, For each Azure AD group user belongs to, the user will be associated to a group with the same name(if it exists) in SonarQube. | false         |
+
+| sonar.auth.aad.restrictedGroups | Restricted Groups | Synchronize only restricted user groups of which the user has a <b>direct or transitive membership</b>. If this value is populated only groups mentioned will get sync and the user will be associated to a group with the same name(if it exists) in SonarQube.\\n ex: {\"GroupDisplayNameinAzureAD\":\"GroupObjectIdInAzureAD\",\"Group2DisplayNameinAzureAD\":\"Group2ObjectIdInAzureAD\"}  | 
 
 Additional Configurations
 -------------------------

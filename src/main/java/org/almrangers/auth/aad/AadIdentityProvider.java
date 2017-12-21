@@ -35,7 +35,9 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -56,6 +58,8 @@ import static org.almrangers.auth.aad.AadSettings.GROUPS_REQUEST_FORMAT;
 import static org.almrangers.auth.aad.AadSettings.LOGIN_STRATEGY_PROVIDER_ID;
 import static org.almrangers.auth.aad.AadSettings.LOGIN_STRATEGY_UNIQUE;
 import static org.almrangers.auth.aad.AadSettings.SECURE_RESOURCE_URL;
+import static org.almrangers.auth.aad.AadSettings.CHECKGROUPS_REQUEST_FORMAT;
+import static org.almrangers.auth.aad.AadSettings.CHECKGROUPS_REQUEST_PAYLOAD_FORMAT;
 
 @ServerSide
 public class AadIdentityProvider implements OAuth2IdentityProvider {
@@ -113,6 +117,7 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
     AuthenticationResult result;
     ExecutorService service = null;
     Set<String> userGroups;
+    Map<String, String> restrictedGroups = null;
     try {
       service = Executors.newFixedThreadPool(1);
       authContext = new AuthenticationContext(settings.authorityUrl(), false, service);
@@ -128,10 +133,18 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
         .setLogin(getLogin(aadUser))
         .setName(aadUser.getGivenName() + " " + aadUser.getFamilyName())
         .setEmail(aadUser.getDisplayableId());
-      if (settings.enableGroupSync()) {
-        userGroups = getUserGroupsMembership(result.getAccessToken(), result.getUserInfo().getUniqueId());
-        userIdentityBuilder.setGroups(userGroups);
-      }
+        if (settings.enableGroupSync()) {
+          restrictedGroups = JSONHelper.jsonToMap(settings.restrictedGroupsString());
+          if(restrictedGroups != null && restrictedGroups.size() >= 1){          
+            userGroups = checkUserGroupsMembership(result.getAccessToken(), result.getUserInfo().getUniqueId(), restrictedGroups);
+          } 
+          else {
+            userGroups = getUserGroupsMembership(result.getAccessToken(), result.getUserInfo().getUniqueId());
+          }
+          
+          if (userGroups != null)
+            userIdentityBuilder.setGroups(userGroups);
+        }
       context.authenticate(userIdentityBuilder.build());
       context.redirectToRequestedPage();
     } catch (Exception e) {
@@ -178,6 +191,53 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
       LOGGER.error(e.toString());
     }
     return userGroups;
+  }
+
+  private Set<String> checkUserGroupsMembership(String accessToken, String userId, Map<String, String> restrictedGroups) {
+    Set<String> userGroups = new HashSet<>();
+    try {
+      URL url = new URL(String.format(CHECKGROUPS_REQUEST_FORMAT, settings.tenantId(), userId));
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestProperty("api-version", "1.6");
+      connection.setRequestProperty("Authorization", accessToken);
+      connection.setRequestProperty("Accept", "application/json;odata=minimalmetadata");
+      connection.setRequestProperty("Content-Type", "application/json;odata=minimalmetadata");
+      connection.setRequestMethod("POST");       
+
+      String checkUserGroupPayLoad = String.format(CHECKGROUPS_REQUEST_PAYLOAD_FORMAT, getRestrictedGorupIds(restrictedGroups));
+      String respStr = HttpClientHelper.getResponseStringFromConn(connection, checkUserGroupPayLoad);
+      
+      int responseCode = connection.getResponseCode();
+      JSONObject response = HttpClientHelper.processGoodRespStr(responseCode, respStr);
+      
+      
+      JSONArray groups;
+      groups = JSONHelper.fetchDirectoryObjectJSONArray(response);
+      
+      ArrayList<String> listdata = new ArrayList<String>();     
+      if (groups != null) { 
+         for (int i=0;i<groups.length();i++){ 
+          listdata.add(groups.getString(i));
+         } 
+      }
+      
+      
+      for (Map.Entry<String,String> entry : restrictedGroups.entrySet()) {
+        if(listdata.contains(entry.getValue())) {
+          userGroups.add(entry.getKey());
+        }
+      }          
+      
+     } catch (Exception e) {
+      LOGGER.error(e.toString());
+    }
+    return userGroups;
+  }
+
+  private String getRestrictedGorupIds(Map<String, String> restrictedGroups) {
+    String[] groupIdArray = restrictedGroups.values().toArray(new String[0]);
+    String validGroupIds = groupIdArray.length <= 0 ? "" :  "\"" +  String.join("\",\"", groupIdArray) + "\"";
+    return validGroupIds;
   }
 
   private String generateUniqueLogin(UserInfo aadUser) {

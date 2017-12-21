@@ -23,6 +23,11 @@ import java.lang.reflect.Field;
 import org.apache.commons.lang3.text.WordUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class JSONHelper {
 
@@ -70,5 +75,28 @@ public class JSONHelper {
           .invoke(destObject, jsonObject.optString(fieldList[i].getName()));
       }
     }
+  }
+
+  public static Map<String, String> jsonToMap(String t)  {
+
+    HashMap<String, String> map = new HashMap<String, String>();
+    try
+    {
+      if(t != null && !t.isEmpty()) {
+        JSONObject jObject = new JSONObject(t);
+        Iterator<?> keys = jObject.keys();
+  
+        while( keys.hasNext() ){
+            String key = (String)keys.next();
+            String value = jObject.getString(key); 
+            map.put(key, value);
+        }
+      }
+
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+
+    return map;
   }
 }

@@ -23,6 +23,7 @@ package org.almrangers.auth.aad;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,6 +47,38 @@ public class HttpClientHelper {
     while ((line = reader.readLine()) != null) {
       stringBuffer.append(line);
     }
+
+    return stringBuffer.toString();
+  }
+
+  public static String getResponseStringFromConn(HttpURLConnection conn, String payLoad) throws IOException {
+    BufferedReader br = null;
+    // Send the http message payload to the server.
+    if (payLoad != null) {
+      conn.setDoOutput(true);
+      OutputStreamWriter osw = new OutputStreamWriter(conn.getOutputStream());
+      osw.write(payLoad);
+      osw.flush();
+      osw.close();
+    }
+
+    int responseCode = conn.getResponseCode();
+    if (responseCode == HttpURLConnection.HTTP_OK) {
+      // Get the message response from the server.
+      br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+     
+    }
+    else {
+       br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+    }
+
+    String line = "";
+    StringBuffer stringBuffer = new StringBuffer();
+    while ((line = br.readLine()) != null) {
+      stringBuffer.append(line);
+    }
+
+    br.close();
 
     return stringBuffer.toString();
   }
