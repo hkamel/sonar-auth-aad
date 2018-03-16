@@ -26,6 +26,19 @@
  */
 package org.almrangers.auth.aad;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashSet;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -33,18 +46,50 @@ import org.sonar.api.config.Settings;
 import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.server.authentication.OAuth2IdentityProvider;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class AadIdentityProviderTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
   Settings settings = new MapSettings();
   AadSettings aadSettings = new AadSettings(settings);
-  AadIdentityProvider underTest = new AadIdentityProvider(aadSettings);
+  AadIdentityProvider underTest = spy(new AadIdentityProvider(aadSettings));
+
+  @Test
+  public void shouldHandleGetMembershipsPagination() throws IOException {
+
+	URL mockUrl = mock(URL.class);
+	HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+
+	doReturn(mockUrl)
+	  .when(underTest)
+	  .getUrl("userId", null);
+
+	doReturn (mockConnection)
+	  .when(mockUrl)
+	  .openConnection();
+
+	doReturn(ClassLoader.class.getResourceAsStream("/get-members-page1.json"))
+	  .when(mockConnection)
+	  .getInputStream();
+	
+	
+	URL mockUrl2 = mock(URL.class);
+	HttpURLConnection mockConnection2 = mock(HttpURLConnection.class);
+
+	doReturn(mockUrl2)
+	  .when(underTest)
+	  .getUrl("userId", "$skiptoken=X'1234567890'");
+
+	doReturn (mockConnection2)
+	  .when(mockUrl2)
+	  .openConnection();
+
+	doReturn(ClassLoader.class.getResourceAsStream("/get-members-page2.json"))
+	  .when(mockConnection2)
+	  .getInputStream();
+	
+	assertEquals(5, underTest.getUserGroupsMembership("token", "userId").size());
+  }
 
   @Test
   public void check_fields() {

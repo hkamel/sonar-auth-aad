@@ -20,7 +20,7 @@
 package org.almrangers.auth.aad;
 
 import java.lang.reflect.Field;
-import org.apache.commons.lang3.text.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -42,6 +42,16 @@ public class JSONHelper {
     return jsonObject.optJSONObject("responseMsg").optJSONArray("value");
   }
 
+  /**
+   * This method parses a JSON field out of a json object
+   *
+   * @param jsonObject The JSON String that holds the collection.
+   * @return next page link 
+   * @throws Exception
+   */
+  public static String fetchNextPageLink(JSONObject jsonObject) {
+    return jsonObject.optJSONObject("responseMsg").has("odata.nextLink") ? StringUtils.substringAfterLast(jsonObject.optJSONObject("responseMsg").get("odata.nextLink").toString(), "memberOf?") : null;
+  }
 
   /**
    * This is a generic method that copies the simple attribute values from an

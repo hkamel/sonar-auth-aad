@@ -1,0 +1,8 @@
+{
+  "value": [
+  	{ "displayName": "Group1" },
+  	{ "displayName": "Group2" },
+  	{ "displayName": "Group3" }
+  ],
+  "odata.nextLink": "directoryObjects/$/Microsoft.DirectoryServices.User/userId/memberOf?$skiptoken=X'1234567890'"
+}

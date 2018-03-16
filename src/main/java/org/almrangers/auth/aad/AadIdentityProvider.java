@@ -32,6 +32,7 @@ import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
 import com.microsoft.aad.adal4j.UserInfo;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
@@ -40,6 +41,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.sonar.api.server.ServerSide;
@@ -154,32 +157,45 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
     }
   }
 
-  private Set<String> getUserGroupsMembership(String accessToken, String userId) {
-    Set<String> userGroups = new HashSet<>();
+  URL getUrl(String userId, String nextPage) throws MalformedURLException {
+	  String url =  String.format(GROUPS_REQUEST_FORMAT, settings.tenantId(), userId);
+	  // Append odata query parameters for subsequent pages
+	if (null != nextPage) {
+		url += "&" + nextPage;
+	}
+	return new URL(url);
+  }
+
+  public Set<String> getUserGroupsMembership(String accessToken, String userId) {
+	Set<String> userGroups = new HashSet<>();
+	String nextPage = null;
     try {
-      URL url = new URL(String.format(GROUPS_REQUEST_FORMAT, settings.tenantId(), userId));
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestProperty("api-version", "1.6");
-      connection.setRequestProperty("Authorization", accessToken);
-      connection.setRequestProperty("Accept", "application/json;odata=minimalmetadata");
-      String goodRespStr = HttpClientHelper.getResponseStringFromConn(connection, true);
-      int responseCode = connection.getResponseCode();
-      JSONObject response = HttpClientHelper.processGoodRespStr(responseCode, goodRespStr);
-      JSONArray groups;
-      groups = JSONHelper.fetchDirectoryObjectJSONArray(response);
-      AadGroup group;
-      for (int i = 0; i < groups.length(); i++) {
-        JSONObject thisUserJSONObject = groups.optJSONObject(i);
-        group = new AadGroup();
-        JSONHelper.convertJSONObjectToDirectoryObject(thisUserJSONObject, group);
-        userGroups.add(group.getDisplayName());
-      }
+      do {
+    	  URL url = getUrl(userId, nextPage);
+	      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	      connection.setRequestProperty("api-version", "1.6");
+	      connection.setRequestProperty("Authorization", accessToken);
+	      connection.setRequestProperty("Accept", "application/json;odata=minimalmetadata");
+	      String goodRespStr = HttpClientHelper.getResponseStringFromConn(connection, true);
+	      int responseCode = connection.getResponseCode();
+	      JSONObject response = HttpClientHelper.processGoodRespStr(responseCode, goodRespStr);
+	      JSONArray groups;
+	      groups = JSONHelper.fetchDirectoryObjectJSONArray(response);      
+	      AadGroup group;
+	      for (int i = 0; i < groups.length(); i++) {
+	        JSONObject thisUserJSONObject = groups.optJSONObject(i);
+	        group = new AadGroup();
+	        JSONHelper.convertJSONObjectToDirectoryObject(thisUserJSONObject, group);
+	        userGroups.add(group.getDisplayName());
+	      }
+	      nextPage = JSONHelper.fetchNextPageLink(response);
+      } while (StringUtils.isNotEmpty(nextPage));
     } catch (Exception e) {
       LOGGER.error(e.toString());
     }
     return userGroups;
   }
-
+  
   private String generateUniqueLogin(UserInfo aadUser) {
     return String.format("%s@%s", aadUser.getDisplayableId(), getKey());
   }
