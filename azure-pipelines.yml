@@ -1,0 +1,44 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: sonarOrganization
+    value: 'srvrguy-github'
+  - name: sonarServiceConnectionName
+    value: 'sonarcloud'
+
+steps:
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: '$(sonarServiceConnectionName)'
+    organization: '$(sonarOrganization)'
+    scannerMode: 'Other'
+
+- task: Maven@3
+  displayName: 'Maven build'
+  inputs:
+    mavenPomFile: 'pom.xml'
+    jdkVersionOption: '1.8'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    goals: 'clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar'
+    options: '--batch-mode'
+    sonarQubeRunAnalysis: true
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+  inputs:
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**/target/*.jar'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+  condition: succeededOrFailed()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+  condition: succeededOrFailed()
+
