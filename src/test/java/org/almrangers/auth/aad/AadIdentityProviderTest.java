@@ -87,7 +87,7 @@ public class AadIdentityProviderTest {
 
 	doReturn(mockUrl2)
 	  .when(underTest)
-	  .getUrl("userId", "$skiptoken=X'1234567890'");
+	  .getUrl("userId", "https://graph.microsoft.com/v1.0/536e97e9-0d29-43ec-b8d5-a505d3ee6a8f/users/abc.xyz@example.com/memberOf?$skiptoken=RANDOMTOKEN");
 
 	doReturn (mockConnection2)
 	  .when(mockUrl2)
