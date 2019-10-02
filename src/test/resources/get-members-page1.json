@@ -1,8 +1,10 @@
+
 {
-  "value": [
-  	{ "displayName": "Group1" },
-  	{ "displayName": "Group2" },
-  	{ "displayName": "Group3" }
-  ],
-  "@odata.nextLink": "directoryObjects/$/Microsoft.DirectoryServices.User/userId/memberOf?$skiptoken=X'1234567890'"
+    "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#directoryObjects",
+    "@odata.nextLink": "https://graph.microsoft.com/v1.0/536e97e9-0d29-43ec-b8d5-a505d3ee6a8f/users/abc.xyz@example.com/memberOf?$skiptoken=RANDOMTOKEN",
+    "value": [
+      { "displayName": "Group1" },
+      { "displayName": "Group2" },
+      { "displayName": "Group3" }
+    ]
 }
