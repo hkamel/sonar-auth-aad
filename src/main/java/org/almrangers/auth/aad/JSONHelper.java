@@ -51,7 +51,7 @@ public class JSONHelper {
    * @throws Exception
    */
   public static String fetchNextPageLink(JSONObject jsonObject) {
-    return jsonObject.optJSONObject("responseMsg").has("@odata.nextLink") ? StringUtils.substringAfterLast(jsonObject.optJSONObject("responseMsg").get("@odata.nextLink").toString(), "memberOf?") : null;
+    return jsonObject.optJSONObject("responseMsg").has("@odata.nextLink") ? jsonObject.optJSONObject("responseMsg").get("@odata.nextLink").toString() : null;
   }
 
   /**
