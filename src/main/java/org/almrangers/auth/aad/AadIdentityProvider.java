@@ -172,8 +172,8 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
       return userInfo.getGivenName() + " " + userInfo.getFamilyName();
     }
 
-    if (result.getIdToken() != null) {
-      String base64EncodedJWTPayload = result.getIdToken().split("\\.")[JWT_PAYLOAD_PART_INDEX];
+    if (result.getAccessToken() != null) {
+      String base64EncodedJWTPayload = result.getAccessToken().split("\\.")[JWT_PAYLOAD_PART_INDEX];
       JSONObject token = new JSONObject(new String(Base64.getDecoder().decode(base64EncodedJWTPayload)));
       if (token.has(NAME_CLAIM)) {
         return token.getString(NAME_CLAIM);
