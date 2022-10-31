@@ -36,6 +36,7 @@ public class HttpClientHelper {
   public static String getResponseStringFromConn(HttpURLConnection conn, boolean isSuccess) throws IOException {
 
     BufferedReader reader;
+
     if (isSuccess) {
       reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     } else {

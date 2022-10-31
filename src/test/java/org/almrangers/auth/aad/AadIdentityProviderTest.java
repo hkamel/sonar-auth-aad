@@ -34,6 +34,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -69,6 +70,14 @@ public class AadIdentityProviderTest {
 	URL mockUrl = mock(URL.class);
 	HttpURLConnection mockConnection = mock(HttpURLConnection.class);
 
+    String resourceName = "get-members-page1.json";
+
+    ClassLoader classLoader = getClass().getClassLoader();
+    File file = new File(classLoader.getResource(resourceName).getFile());
+    String absolutePath = file.getAbsolutePath();
+
+    System.out.println(absolutePath);
+
 	doReturn(mockUrl)
 	  .when(underTest)
 	  .getUrl("userId", null);
@@ -77,7 +86,7 @@ public class AadIdentityProviderTest {
 	  .when(mockUrl)
 	  .openConnection();
 
-	doReturn(ClassLoader.class.getResourceAsStream("/get-members-page1.json"))
+	doReturn(getClass().getClassLoader().getResourceAsStream("get-members-page1.json"))
 	  .when(mockConnection)
 	  .getInputStream();
 	
@@ -93,7 +102,7 @@ public class AadIdentityProviderTest {
 	  .when(mockUrl2)
 	  .openConnection();
 
-	doReturn(ClassLoader.class.getResourceAsStream("/get-members-page2.json"))
+	doReturn(getClass().getClassLoader().getResourceAsStream("get-members-page2.json"))
 	  .when(mockConnection2)
 	  .getInputStream();
 	
