@@ -70,14 +70,6 @@ public class AadIdentityProviderTest {
 	URL mockUrl = mock(URL.class);
 	HttpURLConnection mockConnection = mock(HttpURLConnection.class);
 
-    String resourceName = "get-members-page1.json";
-
-    ClassLoader classLoader = getClass().getClassLoader();
-    File file = new File(classLoader.getResource(resourceName).getFile());
-    String absolutePath = file.getAbsolutePath();
-
-    System.out.println(absolutePath);
-
 	doReturn(mockUrl)
 	  .when(underTest)
 	  .getUrl("userId", null);
