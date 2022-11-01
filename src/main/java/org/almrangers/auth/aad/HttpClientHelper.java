@@ -24,10 +24,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class HttpClientHelper {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private HttpClientHelper() {
     // Static methods
@@ -66,6 +73,27 @@ public class HttpClientHelper {
       response.put("responseMsg", "");
     } else {
       response.put("responseMsg", new JSONObject(goodRespStr));
+    }
+
+    return response;
+  }
+
+  /**
+   * Gets Map having response code and response message
+   * @param responseCode
+   * @param goodRespStr
+   * @return
+   * @throws JsonProcessingException
+   */
+  public static Map<String, Object> processGoodRespStrToMap(int responseCode, String goodRespStr) throws JsonProcessingException {
+    Map<String, Object> response = new HashMap<>();
+
+    response.put("responseCode", responseCode);
+    if (goodRespStr.equalsIgnoreCase("")) {
+      response.put("responseMsg", "");
+    } else {
+      Map<String, Object> goodResonseMap = OBJECT_MAPPER.readValue(goodRespStr, Map.class);
+      response.put("responseMsg", goodResonseMap);
     }
 
     return response;

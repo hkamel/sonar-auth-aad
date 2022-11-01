@@ -19,12 +19,19 @@
  ******************************************************************************/
 package org.almrangers.auth.aad;
 
-import java.lang.reflect.Field;
-import org.apache.commons.text.WordUtils;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class JSONHelper {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private JSONHelper() {
     // Utility class
@@ -43,6 +50,20 @@ public class JSONHelper {
   }
 
   /**
+   * Gets AadGroup list from response object map
+   * @param responseObject : it has value which contains displayName
+   * @return List of AadGroup that contains displayName
+   * @throws JsonProcessingException
+   */
+  public static List<AadGroup> fetchDirectoryObjectAadGroups(Map<String, Object> responseObject) throws JsonProcessingException {
+    Map<String, Object> responseMsg = (Map<String, Object>) responseObject.get("responseMsg");
+    Object value = responseMsg.get("value");
+    List<AadGroup> groups = OBJECT_MAPPER.convertValue(value, new TypeReference<List<AadGroup>>() {});
+    return groups;
+  }
+
+
+  /**
    * This method parses a JSON field out of a json object
    *
    * @param jsonObject The JSON String that holds the collection.
@@ -54,31 +75,14 @@ public class JSONHelper {
   }
 
   /**
-   * This is a generic method that copies the simple attribute values from an
-   * argument jsonObject to an argument generic object.
-   *
-   * @param jsonObject The jsonObject from where the attributes are to be copied.
-   * @param destObject The object where the attributes should be copied into.
-   * @throws Exception Throws a Exception when the operation are unsuccessful.
+   * Fetches NextLink Url from response
+   * @param responseObject
+   * @return
    */
-  public static <T> void convertJSONObjectToDirectoryObject(JSONObject jsonObject, T destObject) throws Exception {
+  public static String fetchNextPageLink(Map<String, Object> responseObject) {
+    Map<String, Object> responseMsg = (Map<String, Object>) responseObject.get("responseMsg");
 
-    // Get the list of all the field names.
-    Field[] fieldList = destObject.getClass().getDeclaredFields();
-
-    // For all the declared field.
-    for (int i = 0; i < fieldList.length; i++) {
-      // If the field is of type String, that is
-      // if it is a simple attribute.
-      if (fieldList[i].getType().equals(String.class)) {
-        // Invoke the corresponding set method of the destObject using
-        // the argument taken from the jsonObject.
-        destObject
-          .getClass()
-          .getMethod(String.format("set%s", WordUtils.capitalize(fieldList[i].getName())),
-            String.class)
-          .invoke(destObject, jsonObject.optString(fieldList[i].getName()));
-      }
-    }
+    Object nextLink = responseMsg.get("@odata.nextLink");
+    return nextLink == null ? null : nextLink.toString();
   }
 }

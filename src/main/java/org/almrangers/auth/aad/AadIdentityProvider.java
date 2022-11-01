@@ -35,10 +35,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -46,7 +43,6 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.sonar.api.server.ServerSide;
 import org.sonar.api.server.authentication.Display;
@@ -217,14 +213,11 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
 	      connection.setRequestProperty("Accept", "application/json;odata.metadata=minimal");
 	      String goodRespStr = HttpClientHelper.getResponseStringFromConn(connection, true);
 	      int responseCode = connection.getResponseCode();
-	      JSONObject response = HttpClientHelper.processGoodRespStr(responseCode, goodRespStr);
-	      JSONArray groups;
-	      groups = JSONHelper.fetchDirectoryObjectJSONArray(response);
-	      AadGroup group;
-	      for (int i = 0; i < groups.length(); i++) {
-	        JSONObject thisUserJSONObject = groups.optJSONObject(i);
-	        group = new AadGroup();
-	        JSONHelper.convertJSONObjectToDirectoryObject(thisUserJSONObject, group);
+          Map<String, Object> response = HttpClientHelper.processGoodRespStrToMap(responseCode, goodRespStr);
+
+          List<AadGroup> groups = JSONHelper.fetchDirectoryObjectAadGroups(response);
+
+	      for (AadGroup group : groups) {
 	        if (group.isValid()) {
               userGroups.add(group.getDisplayName());
 	        }
