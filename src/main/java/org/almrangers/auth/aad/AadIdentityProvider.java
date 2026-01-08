@@ -29,7 +29,6 @@ package org.almrangers.auth.aad;
 
 import java.net.*;
 import java.util.concurrent.ExecutorService;
-import javax.servlet.http.HttpServletRequest;
 
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.*;
@@ -45,6 +44,7 @@ import org.sonar.api.server.ServerSide;
 import org.sonar.api.server.authentication.Display;
 import org.sonar.api.server.authentication.OAuth2IdentityProvider;
 import org.sonar.api.server.authentication.UnauthorizedException;
+import org.sonar.api.server.http.HttpRequest;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 
@@ -130,7 +130,7 @@ public class AadIdentityProvider implements OAuth2IdentityProvider {
   void onCallback(CallbackContext context) throws UnauthorizedException {
     context.verifyCsrfState();
 
-    HttpServletRequest request = context.getRequest();
+    HttpRequest request = context.getHttpRequest();
     AuthorizationCode code = new AuthorizationCode(request.getParameter("code"));
     ExecutorService service = null;
 

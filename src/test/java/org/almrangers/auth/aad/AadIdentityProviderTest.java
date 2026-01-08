@@ -36,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.server.authentication.OAuth2IdentityProvider;
 import org.sonar.api.server.authentication.UnauthorizedException;
+import org.sonar.api.server.http.HttpRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -60,10 +61,10 @@ public class AadIdentityProviderTest {
   public void fail_login_on_bad_auth_code() {
     setSettings(true);
     OAuth2IdentityProvider.CallbackContext context = mock(OAuth2IdentityProvider.CallbackContext.class);
-    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpRequest request = mock(HttpRequest.class);
 
     when(request.getParameter("code")).thenReturn("9Q4mHqIAmAHORqpwwUaAxnGh");
-    when(context.getRequest()).thenReturn(request);
+    when(context.getHttpRequest()).thenReturn(request);
 
     assertThrows(UnauthorizedException.class,
         () -> underTest.onCallback(context)
